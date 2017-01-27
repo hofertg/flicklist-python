@@ -100,17 +100,24 @@ class AddMovie(webapp2.RequestHandler):
     def post(self):
         # look inside the request to figure out what the user typed
         new_movie = self.request.get("new-movie")
+        blank_form = "<strong>You can't add a blank title to the list!!!</strong>"
+        terrible_form = "<strong>NO!</strong> {0} is a <strong><em>terrible</em></strong> movie, and you can't add it!"
 
         # TODO 2
         # if the user typed nothing at all, redirect and yell at them
+        if new_movie == "":
+            self.redirect("/?error=" + blank_form)
 
 
         # TODO 3
         # if the user wants to add a terrible movie, redirect and yell at them
+        if new_movie.title() in terrible_movies or new_movie in terrible_movies:
+            self.redirect("/?error=" + terrible_form.format(new_movie))
 
 
         # TODO 1
         # 'escape' the user's input so that if they typed HTML, it doesn't mess up our site
+        new_movie = cgi.escape(new_movie, quote=True)
 
         # build response content
         new_movie_element = "<strong>" + new_movie + "</strong>"
