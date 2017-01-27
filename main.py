@@ -105,7 +105,7 @@ class AddMovie(webapp2.RequestHandler):
 
         # TODO 2
         # if the user typed nothing at all, redirect and yell at them
-        if new_movie == "":
+        if (not new_movie) or new_movie.strip() == "":
             self.redirect("/?error=" + blank_form)
 
 
