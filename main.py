@@ -1,6 +1,7 @@
 import webapp2, cgi, jinja2, os, re
 from google.appengine.ext import db
 import hashutils
+from datetime import datetime
 
 
 # set up jinja
@@ -35,7 +36,9 @@ class Movie(db.Model):
     title = db.StringProperty(required = True)
     created = db.DateTimeProperty(auto_now_add = True)
     watched = db.BooleanProperty(required = True, default = False)
+    datetime_watched = db.DateTimeProperty()
     rating = db.StringProperty()
+    owner = db.ReferenceProperty(User, required=True)
 
 
 class Handler(webapp2.RequestHandler):
@@ -137,7 +140,7 @@ class AddMovie(Handler):
         new_movie_title_escaped = cgi.escape(new_movie_title, quote=True)
 
         # construct a movie object for the new movie
-        movie = Movie(title = new_movie_title_escaped)
+        movie = Movie(title = new_movie_title_escaped, owner = self.user)
         movie.put()
 
         # render the confirmation message
@@ -163,6 +166,7 @@ class WatchedMovie(Handler):
 
         # update the movie object to say the user watched it at this date in time
         watched_movie.watched = True
+        watched_movie.datetime_watched = datetime.now()
         watched_movie.put()
 
         # render confirmation page
@@ -179,7 +183,8 @@ class MovieRatings(Handler):
         """ Show a list of the movies the user has already watched """
 
         # query for movies that have already been watched
-        watched_movies = db.GqlQuery("SELECT * FROM Movie WHERE watched = True")
+        query = Movie.all().filter("owner", self.user).filter("watched", True)
+        watched_movies = query.run()
 
         t = jinja_env.get_template("ratings.html")
         content = t.render(movies = watched_movies)
@@ -204,6 +209,18 @@ class MovieRatings(Handler):
             self.response.write(content)
         else:
             self.renderError(400)
+
+class RecentlyWatchedMovies(Handler):
+
+    def get(self):
+        query = Movie.all().filter("watched", True).order("-datetime_watched")
+        recently_watched_movies = query.fetch(limit=20)
+
+        content = ""
+        for movie in recently_watched_movies:
+            content += movie.title + ","
+
+        self.response.write(content)
 
 
 class Login(Handler):
@@ -327,6 +344,7 @@ app = webapp2.WSGIApplication([
     ('/add', AddMovie),
     ('/watched-it', WatchedMovie),
     ('/ratings', MovieRatings),
+    ('/recently-watched', RecentlyWatchedMovies),
     ('/login', Login),
     ('/logout', Logout),
     ('/register', Register)
