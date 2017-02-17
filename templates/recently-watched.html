@@ -4,6 +4,13 @@
 
 <h2>Recently Watched Movies</h2>
 
+{% for movie in recently_watched_movies %}
+    <p><em>{{ movie.owner.username }}</em> watched <strong>{{ movie.title }}</strong>
+    {% if movie.rating %}
+        who gave it a rating of <strong>{{ movie.rating }}</strong>
+    {% endif %}
+
+{% endfor %}
 <!--
 TODO 5
 Implement this template!
